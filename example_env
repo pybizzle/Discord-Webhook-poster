@@ -1,0 +1,4 @@
+# Discord Post Manager - Webhook URLs
+MAIN_SERVER_GENERAL=Your-Discord-Channel-Webhook-HERE
+DEV_SERVER_ANNOUNCEMENTS=Your-Discord-Channel-Webhook-HERE
+GAMING_EVENTS=Your-Discord-Channel-Webhook-HERE
