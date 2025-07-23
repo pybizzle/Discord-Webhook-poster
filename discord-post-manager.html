@@ -1,0 +1,2145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Post Manager</title>
+    <style>
+        :root {
+            /* Light mode colors */
+            --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-container: rgba(255, 255, 255, 0.95);
+            --bg-section: white;
+            --bg-input: white;
+            --bg-post-item: #f8fafc;
+            --bg-discord-preview: #36393f;
+            --bg-discord-embed: #2f3136;
+            
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-label: #374151;
+            --text-discord: #dcddde;
+            --text-embed-title: #00d4aa;
+            
+            --border-color: #e5e7eb;
+            --border-post: #5865f2;
+            --shadow-light: rgba(0, 0, 0, 0.1);
+            --shadow-medium: rgba(0, 0, 0, 0.08);
+        }
+
+        [data-theme="dark"] {
+            /* Dark mode colors */
+            --bg-primary: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            --bg-container: rgba(17, 24, 39, 0.95);
+            --bg-section: #1f2937;
+            --bg-input: #374151;
+            --bg-post-item: #374151;
+            --bg-discord-preview: #36393f;
+            --bg-discord-embed: #2f3136;
+            
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-label: #e5e7eb;
+            --text-discord: #dcddde;
+            --text-embed-title: #00d4aa;
+            
+            --border-color: #4b5563;
+            --border-post: #7c3aed;
+            --shadow-light: rgba(0, 0, 0, 0.3);
+            --shadow-medium: rgba(0, 0, 0, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--bg-container);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px var(--shadow-light);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #5865f2, #7289da);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            padding: 8px 16px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--bg-section);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+            background: rgba(88, 101, 242, 0.05);
+        }
+
+        .tab.active {
+            color: #5865f2;
+            background: rgba(88, 101, 242, 0.1);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #5865f2;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .section {
+            background: var(--bg-section);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px var(--shadow-medium);
+            border: 1px solid var(--border-color);
+        }
+
+        .full-width-section {
+            grid-column: 1 / -1;
+        }
+
+        .section h2 {
+            color: #5865f2;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-label);
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #5865f2;
+            box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.1);
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: var(--text-secondary);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #5865f2, #7289da);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(88, 101, 242, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280, #9ca3af);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #34d399);
+        }
+
+        .post-item, .webhook-item {
+            background: var(--bg-post-item);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--border-post);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .post-item:hover, .webhook-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px var(--shadow-light);
+        }
+
+        .post-item.selected {
+            background: rgba(88, 101, 242, 0.1);
+            border-left-color: #5865f2;
+            border-left-width: 6px;
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(88, 101, 242, 0.2);
+        }
+
+        .post-item.selected .post-title {
+            color: #5865f2;
+            font-weight: 700;
+        }
+
+        .post-title, .webhook-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .post-content, .webhook-url {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+
+        .webhook-url {
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        .post-actions, .webhook-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .webhook-status {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .status-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .status-warning {
+            background: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fed7aa;
+        }
+
+        [data-theme="dark"] .status-success {
+            background: #065f46;
+            color: #a7f3d0;
+            border: 1px solid #047857;
+        }
+
+        [data-theme="dark"] .status-error {
+            background: #7f1d1d;
+            color: #fca5a5;
+            border: 1px solid #991b1b;
+        }
+
+        [data-theme="dark"] .status-warning {
+            background: #78350f;
+            color: #fcd34d;
+            border: 1px solid #92400e;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 40px 20px;
+        }
+
+        .color-input {
+            width: 60px !important;
+            height: 40px;
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .tab-content {
+                padding: 20px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
+
+        .discord-preview {
+            background: #36393f;
+            color: #dcddde;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        .discord-embed {
+            background: #2f3136;
+            border-left: 4px solid #5865f2;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .embed-thumbnail {
+            float: right;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            margin-left: 15px;
+            object-fit: cover;
+        }
+
+        .embed-image {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .embed-title {
+            color: #00d4aa;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .embed-title-link {
+            color: #00d4aa;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .embed-title-link:hover {
+            text-decoration: underline;
+        }
+
+        .embed-description {
+            color: #dcddde;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="themeIcon">🌙</span>
+                <span id="themeText">Dark</span>
+            </button>
+            <h1>Discord Post Manager</h1>
+            <p>Create, manage, and send custom posts to Discord via webhooks</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('create')">✏️ Create Post</button>
+            <button class="tab" onclick="switchTab('posts')">📚 Saved Posts</button>
+            <button class="tab" onclick="switchTab('webhooks')">🔗 Webhook Manager</button>
+        </div>
+
+        <!-- Create Post Tab -->
+        <div id="createTab" class="tab-content active">
+            <div class="main-content">
+                <!-- Create/Edit Post Section -->
+                <div class="section">
+                    <h2>✏️ Create/Edit Post</h2>
+                    
+                    <div id="webhookStatus" class="webhook-status status-warning">
+                        ⚠️ Please select or add a Discord webhook first
+                    </div>
+
+                    <div class="form-group">
+                        <label for="webhookSelect">Discord Webhook:</label>
+                        <div class="form-row">
+                            <select id="webhookSelect">
+                                <option value="">Select a webhook...</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="switchTab('webhooks')">Manage Webhooks</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="postTitle">Post Title:</label>
+                        <input type="text" id="postTitle" placeholder="Enter post title">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="postContent">Post Content:</label>
+                        <textarea id="postContent" placeholder="Enter your Discord message content..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="postType">Post Type:</label>
+                        <select id="postType">
+                            <option value="simple">Simple Message</option>
+                            <option value="embed">Rich Embed</option>
+                        </select>
+                    </div>
+
+                    <div id="embedOptions" style="display: none;">
+                        <div class="form-group">
+                            <label for="embedTitle">Embed Title:</label>
+                            <input type="text" id="embedTitle" placeholder="Embed title">
+                        </div>
+                        <div class="form-group">
+                            <label for="embedDescription">Embed Description:</label>
+                            <textarea id="embedDescription" placeholder="Enter embed description..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="embedUrl">Embed URL (makes title clickable):</label>
+                            <input type="url" id="embedUrl" placeholder="https://example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="embedImage">Image URL:</label>
+                            <input type="url" id="embedImage" placeholder="https://example.com/image.png">
+                        </div>
+                        <div class="form-group">
+                            <label for="embedThumbnail">Thumbnail URL:</label>
+                            <input type="url" id="embedThumbnail" placeholder="https://example.com/thumbnail.png">
+                        </div>
+                        <div class="form-group">
+                            <label for="embedColor">Embed Color:</label>
+                            <input type="color" id="embedColor" class="color-input" value="#5865f2">
+                        </div>
+                    </div>
+
+                    <div id="previewSection">
+                        <h3>Preview:</h3>
+                        <div id="discordPreview" class="discord-preview">
+                            <div>💭 Your message preview will appear here...</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button class="btn" onclick="savePost()">💾 Save Post</button>
+                        <button class="btn btn-secondary" onclick="clearForm()">🗑️ Clear</button>
+                        <button class="btn btn-success" onclick="sendToDiscord()">🚀 Send to Discord</button>
+                    </div>
+                </div>
+
+                <!-- Quick Send Section -->
+                <div class="section">
+                    <h2>🚀 Quick Send</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">Send a message without saving it</p>
+                    
+                    <div class="form-group">
+                        <label for="quickWebhook">Select Webhook:</label>
+                        <select id="quickWebhook">
+                            <option value="">Select a webhook...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="quickMessage">Message:</label>
+                        <textarea id="quickMessage" placeholder="Enter your message..." rows="4"></textarea>
+                    </div>
+                    
+                    <button class="btn btn-success" onclick="sendQuickMessage()">🚀 Send Now</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Saved Posts Tab -->
+        <div id="postsTab" class="tab-content">
+            <div class="main-content">
+                <!-- Saved Posts List -->
+                <div class="section">
+                    <h2>📚 Saved Posts</h2>
+                    
+                    <div style="margin-bottom: 20px; padding: 15px; background: var(--bg-post-item); border-radius: 10px;">
+                        <h4 style="margin-bottom: 10px; color: var(--text-primary);">📁 Post Collections</h4>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                            <input type="file" id="importPostsFile" accept=".json" style="display: none;" onchange="importPostCollection()">
+                            <button class="btn" onclick="document.getElementById('importPostsFile').click()">📥 Import Posts</button>
+                            <button class="btn btn-secondary" onclick="exportPosts()">📤 Export Posts</button>
+                            <button class="btn btn-danger" onclick="clearAllPosts()" title="Remove all posts except examples">🗑️ Clear All</button>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                            <span style="font-size: 12px; color: var(--text-primary); font-weight: 500; align-self: center;">📦 Quick Templates:</span>
+                            <button class="btn btn-secondary" style="font-size: 11px; padding: 6px 12px;" onclick="downloadTemplate('gaming')">🎮 Gaming Server</button>
+                            <button class="btn btn-secondary" style="font-size: 11px; padding: 6px 12px;" onclick="downloadTemplate('community')">👥 Community Server</button>
+                            <button class="btn btn-secondary" style="font-size: 11px; padding: 6px 12px;" onclick="downloadTemplate('business')">💼 Business/Team</button>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">
+                            💡 <strong>Tip:</strong> Create different post collections for each server you moderate. Export your posts when switching between servers!
+                        </div>
+                    </div>
+                    
+                    <div id="savedPosts">
+                        <div class="empty-state">
+                            <p>No saved posts yet. Create your first post!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Post Preview -->
+                <div class="section">
+                    <h2>👁️ Preview</h2>
+                    <div id="postPreviewStatus" class="webhook-status status-warning">
+                        🎯 Select a post to see preview
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="previewWebhookSelect">Preview with Webhook:</label>
+                        <select id="previewWebhookSelect">
+                            <option value="">Select a webhook for preview...</option>
+                        </select>
+                    </div>
+                    
+                    <div id="selectedPostPreview">
+                        <div id="postDiscordPreview" class="discord-preview">
+                            <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+                                📝 Select a post from the left to see how it will look in Discord
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="previewActions" style="display: none; margin-top: 15px;">
+                        <button class="btn btn-secondary" onclick="editSelectedPost()">✏️ Edit Post</button>
+                        <button class="btn btn-success" onclick="sendSelectedPost()">🚀 Send to Discord</button>
+                        <button class="btn btn-danger" onclick="deleteSelectedPost()">🗑️ Delete Post</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Webhook Manager Tab -->
+        <div id="webhooksTab" class="tab-content">
+            <div class="main-content">
+                <!-- Add Webhook Section -->
+                <div class="section">
+                    <h2>🔗 Add/Edit Webhook</h2>
+                    
+                    <div class="form-group">
+                        <label for="webhookName">Webhook Name:</label>
+                        <input type="text" id="webhookName" placeholder="e.g., Main Server - General">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="webhookUrl">Webhook URL:</label>
+                        <input type="url" id="webhookUrl" placeholder="https://discord.com/api/webhooks/...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="webhookDescription">Description (optional):</label>
+                        <input type="text" id="webhookDescription" placeholder="e.g., For announcements and updates">
+                    </div>
+
+                    <div>
+                        <button class="btn" onclick="saveWebhook()">💾 Save Webhook</button>
+                        <button class="btn btn-secondary" onclick="clearWebhookForm()">🗑️ Clear</button>
+                        <button class="btn btn-success" onclick="testWebhook()">🧪 Test Webhook</button>
+                    </div>
+                </div>
+
+                <!-- Saved Webhooks Section -->
+                <div class="section">
+                    <h2>📋 Saved Webhooks</h2>
+                    
+                    <div style="margin-bottom: 20px; padding: 15px; background: var(--bg-post-item); border-radius: 10px;">
+                        <h4 style="margin-bottom: 10px; color: var(--text-primary);">📁 Backup & Share</h4>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                            <button class="btn btn-secondary" onclick="exportData(false)">📤 Export All Data (Safe)</button>
+                            <button class="btn btn-secondary" onclick="exportData(true)" style="background: linear-gradient(135deg, #f59e0b, #d97706);">📤 Export with URLs ⚠️</button>
+                            <button class="btn btn-secondary" onclick="exportWebhooks()">📤 Export Webhooks Only</button>
+                            <button class="btn btn-secondary" onclick="exportPosts()">📤 Export Posts Only</button>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData()">
+                            <button class="btn" onclick="document.getElementById('importFile').click()">📥 Import Data</button>
+                            <input type="file" id="envFile" accept=".env,.txt" style="display: none;" onchange="importEnvFile()">
+                            <button class="btn" onclick="document.getElementById('envFile').click()">🔧 Upload Webhook URLs (.env)</button>
+                            <button class="btn btn-secondary" onclick="downloadEnvTemplate()">📄 Download .env Template</button>
+                            <button class="btn btn-secondary" onclick="showEnvHelp()" style="background: linear-gradient(135deg, #10b981, #34d399);">❓ .env Help</button>
+                        </div>
+                        <div style="margin-top: 10px; padding: 10px; background: rgba(245, 158, 11, 0.1); border-radius: 5px; font-size: 12px; color: var(--text-secondary);">
+                            💡 <strong>Tip:</strong> Use .env files with custom webhook names! Download the template, add your URLs with any names you want, then upload to create or update webhooks automatically.
+                        </div>
+                    </div>
+                    
+                    <div id="savedWebhooks">
+                        <div class="empty-state">
+                            <p>No webhooks saved yet. Add your first webhook!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // In-memory storage for posts and webhooks
+        let savedPosts = [
+            {
+                id: 1,
+                title: "Example: Simple Message",
+                content: "Welcome to our Discord server! 🎉\n\nPlease read the rules and introduce yourself in #introductions!",
+                type: "simple",
+                embedTitle: "",
+                embedDescription: "",
+                embedUrl: "",
+                embedImage: "",
+                embedThumbnail: "",
+                embedColor: "#5865f2"
+            },
+            {
+                id: 2,
+                title: "Example: Rich Embed",
+                content: "Optional message content that appears above the embed",
+                type: "embed",
+                embedTitle: "🎮 Weekly Event",
+                embedDescription: "This is an example of a rich embed with custom formatting.\n\n**Features:**\n• Custom colors\n• Images and thumbnails\n• Clickable titles\n• Structured content\n\nUse rich embeds for announcements, events, and important information!",
+                embedUrl: "https://discord.com",
+                embedImage: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=200&fit=crop",
+                embedThumbnail: "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=80&h=80&fit=crop",
+                embedColor: "#00d4aa"
+            }
+        ];
+
+        let savedWebhooks = [
+            {
+                id: 1,
+                name: "Example Server - General",
+                url: "https://discord.com/api/webhooks/example",
+                description: "Main announcements channel"
+            }
+        ];
+        
+        let currentEditId = null;
+        let currentWebhookEditId = null;
+        let selectedWebhookUrl = '';
+        let selectedPostId = null;
+        let isDarkMode = false;
+        let activeTab = 'create';
+
+        // Initialize the app
+        function init() {
+            renderSavedPosts();
+            renderSavedWebhooks();
+            updateWebhookSelectors();
+            setupEventListeners();
+            updateWebhookStatus();
+            updateThemeDisplay();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('postType').addEventListener('change', toggleEmbedOptions);
+            document.getElementById('webhookSelect').addEventListener('change', updateWebhookStatus);
+            
+            // Add event listener for preview webhook selector
+            const previewWebhookSelect = document.getElementById('previewWebhookSelect');
+            if (previewWebhookSelect) {
+                previewWebhookSelect.addEventListener('change', updatePostPreview);
+            }
+            
+            // Add event listeners for live preview
+            ['postContent', 'embedTitle', 'embedDescription', 'embedUrl', 'embedImage', 'embedThumbnail', 'embedColor', 'postType'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updatePreview);
+            });
+            
+            updatePreview();
+        }
+
+        function switchTab(tab) {
+            // Remove active class from all tabs and contents
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Add active class to selected tab and content
+            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`${tab}Tab`).classList.add('active');
+            
+            activeTab = tab;
+            
+            // Update post preview if switching to posts tab
+            if (tab === 'posts') {
+                updatePostPreview();
+            }
+        }
+
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            updateThemeDisplay();
+        }
+
+        function updateThemeDisplay() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
+            if (isDarkMode) {
+                body.setAttribute('data-theme', 'dark');
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'Light';
+            } else {
+                body.removeAttribute('data-theme');
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Dark';
+            }
+        }
+
+        function toggleEmbedOptions() {
+            const postType = document.getElementById('postType').value;
+            const embedOptions = document.getElementById('embedOptions');
+            embedOptions.style.display = postType === 'embed' ? 'block' : 'none';
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const content = document.getElementById('postContent').value;
+            const postType = document.getElementById('postType').value;
+            const embedTitle = document.getElementById('embedTitle').value;
+            const embedDescription = document.getElementById('embedDescription').value;
+            const embedUrl = document.getElementById('embedUrl').value;
+            const embedImage = document.getElementById('embedImage').value;
+            const embedThumbnail = document.getElementById('embedThumbnail').value;
+            const embedColor = document.getElementById('embedColor').value;
+            const preview = document.getElementById('discordPreview');
+
+            if (postType === 'simple') {
+                if (!content.trim()) {
+                    preview.innerHTML = '<div>💭 Your message preview will appear here...</div>';
+                    return;
+                }
+                preview.innerHTML = `<div>${content.replace(/\n/g, '<br>')}</div>`;
+            } else {
+                // For embeds, show preview even if main content is empty but embed fields have content
+                const hasEmbedContent = embedTitle.trim() || embedDescription.trim() || embedUrl.trim() || embedImage.trim() || embedThumbnail.trim();
+                const hasMainContent = content.trim();
+                
+                if (!hasMainContent && !hasEmbedContent) {
+                    preview.innerHTML = '<div>💭 Your message preview will appear here...</div>';
+                    return;
+                }
+
+                let previewHTML = '';
+                
+                // Add main content if it exists
+                if (hasMainContent) {
+                    previewHTML += `<div>${content.replace(/\n/g, '<br>')}</div>`;
+                }
+                
+                // Add embed
+                previewHTML += `<div class="discord-embed" style="border-left-color: ${embedColor}">`;
+                
+                // Add thumbnail if provided
+                if (embedThumbnail) {
+                    previewHTML += `<img src="${embedThumbnail}" class="embed-thumbnail" alt="Thumbnail" onerror="this.style.display='none'">`;
+                }
+                
+                // Add title (with link if URL provided)
+                if (embedTitle) {
+                    if (embedUrl) {
+                        previewHTML += `<a href="${embedUrl}" class="embed-title-link" target="_blank">${embedTitle}</a>`;
+                    } else {
+                        previewHTML += `<div class="embed-title">${embedTitle}</div>`;
+                    }
+                }
+                
+                // Add description
+                previewHTML += `<div class="embed-description">${embedDescription ? embedDescription.replace(/\n/g, '<br>') : 'Enter embed description above...'}</div>`;
+                
+                // Add image if provided
+                if (embedImage) {
+                    previewHTML += `<img src="${embedImage}" class="embed-image" alt="Embed Image" onerror="this.style.display='none'">`;
+                }
+                
+                previewHTML += `</div>`;
+                
+                preview.innerHTML = previewHTML;
+            }
+        }
+
+        function updateWebhookStatus() {
+            const selectedId = document.getElementById('webhookSelect').value;
+            const status = document.getElementById('webhookStatus');
+            
+            if (!selectedId) {
+                selectedWebhookUrl = '';
+                status.className = 'webhook-status status-warning';
+                status.innerHTML = '⚠️ Please select or add a Discord webhook first';
+            } else {
+                const webhook = savedWebhooks.find(w => w.id == selectedId);
+                if (webhook) {
+                    selectedWebhookUrl = webhook.url;
+                    status.className = 'webhook-status status-success';
+                    status.innerHTML = `✅ Using webhook: ${webhook.name}`;
+                }
+            }
+        }
+
+        function updateWebhookSelectors() {
+            const selectors = ['webhookSelect', 'quickWebhook', 'previewWebhookSelect'];
+            
+            selectors.forEach(selectorId => {
+                const selector = document.getElementById(selectorId);
+                if (!selector) return; // Skip if selector doesn't exist
+                
+                const currentValue = selector.value;
+                
+                selector.innerHTML = '<option value="">Select a webhook...</option>';
+                
+                savedWebhooks.forEach(webhook => {
+                    const option = document.createElement('option');
+                    option.value = webhook.id;
+                    option.textContent = webhook.name;
+                    selector.appendChild(option);
+                });
+                
+                selector.value = currentValue;
+            });
+        }
+
+        // Webhook Management Functions
+        function saveWebhook() {
+            const name = document.getElementById('webhookName').value.trim();
+            const url = document.getElementById('webhookUrl').value.trim();
+            const description = document.getElementById('webhookDescription').value.trim();
+
+            if (!name || !url) {
+                alert('Please fill in both name and URL fields.');
+                return;
+            }
+
+            if (!url.includes('discord.com/api/webhooks/')) {
+                alert('Invalid webhook URL format. Please use a valid Discord webhook URL.');
+                return;
+            }
+
+            const webhook = {
+                id: currentWebhookEditId || Date.now(),
+                name,
+                url,
+                description
+            };
+
+            if (currentWebhookEditId) {
+                const index = savedWebhooks.findIndex(w => w.id === currentWebhookEditId);
+                savedWebhooks[index] = webhook;
+                currentWebhookEditId = null;
+            } else {
+                savedWebhooks.push(webhook);
+            }
+
+            renderSavedWebhooks();
+            updateWebhookSelectors();
+            clearWebhookForm();
+            alert('Webhook saved successfully! 🎉');
+        }
+
+        function clearWebhookForm() {
+            document.getElementById('webhookName').value = '';
+            document.getElementById('webhookUrl').value = '';
+            document.getElementById('webhookDescription').value = '';
+            currentWebhookEditId = null;
+        }
+
+        function renderSavedWebhooks() {
+            const container = document.getElementById('savedWebhooks');
+            
+            if (savedWebhooks.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No webhooks saved yet. Add your first webhook!</p></div>';
+                return;
+            }
+
+            container.innerHTML = savedWebhooks.map(webhook => `
+                <div class="webhook-item">
+                    <div class="webhook-title">${webhook.name}</div>
+                    ${webhook.description ? `<div style="color: var(--text-secondary); font-size: 14px; margin-bottom: 5px;">${webhook.description}</div>` : ''}
+                    <div class="webhook-url">${webhook.url.substring(0, 50)}...</div>
+                    <div class="webhook-actions">
+                        <button class="btn btn-secondary" onclick="editWebhook(${webhook.id})">✏️ Edit</button>
+                        <button class="btn btn-success" onclick="testWebhookById(${webhook.id})">🧪 Test</button>
+                        <button class="btn btn-danger" onclick="deleteWebhook(${webhook.id})">🗑️ Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function editWebhook(id) {
+            const webhook = savedWebhooks.find(w => w.id === id);
+            if (!webhook) return;
+
+            document.getElementById('webhookName').value = webhook.name;
+            document.getElementById('webhookUrl').value = webhook.url;
+            document.getElementById('webhookDescription').value = webhook.description || '';
+            
+            currentWebhookEditId = id;
+            
+            // Switch to the Webhook Manager tab for editing
+            switchTab('webhooks');
+        }
+
+        function deleteWebhook(id) {
+            if (confirm('Are you sure you want to delete this webhook?')) {
+                savedWebhooks = savedWebhooks.filter(w => w.id !== id);
+                renderSavedWebhooks();
+                updateWebhookSelectors();
+                updateWebhookStatus();
+            }
+        }
+
+        async function testWebhook() {
+            const url = document.getElementById('webhookUrl').value.trim();
+            if (!url) {
+                alert('Please enter a webhook URL first.');
+                return;
+            }
+            await testWebhookUrl(url);
+        }
+
+        async function testWebhookById(id) {
+            const webhook = savedWebhooks.find(w => w.id === id);
+            if (!webhook) return;
+            await testWebhookUrl(webhook.url);
+        }
+
+        async function testWebhookUrl(url) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        content: '🧪 Test message from Discord Post Manager!'
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Test message sent successfully! 🎉');
+                } else {
+                    const errorText = await response.text();
+                    alert(`Test failed: ${response.status} ${response.statusText}\n${errorText}`);
+                }
+            } catch (error) {
+                alert(`Error testing webhook: ${error.message}`);
+            }
+        }
+
+        function sendQuickMessage() {
+            const webhookId = document.getElementById('quickWebhook').value;
+            const message = document.getElementById('quickMessage').value.trim();
+
+            if (!webhookId || !message) {
+                alert('Please select a webhook and enter a message.');
+                return;
+            }
+
+            const webhook = savedWebhooks.find(w => w.id == webhookId);
+            if (!webhook) {
+                alert('Selected webhook not found.');
+                return;
+            }
+
+            sendToDiscordInternal({ content: message, type: 'simple' }, webhook.url);
+        }
+
+        // Modified existing functions to work with webhook selection
+        function savePost() {
+            const title = document.getElementById('postTitle').value.trim();
+            const content = document.getElementById('postContent').value.trim();
+            const postType = document.getElementById('postType').value;
+            const embedTitle = document.getElementById('embedTitle').value.trim();
+            const embedDescription = document.getElementById('embedDescription').value.trim();
+            const embedUrl = document.getElementById('embedUrl').value.trim();
+            const embedImage = document.getElementById('embedImage').value.trim();
+            const embedThumbnail = document.getElementById('embedThumbnail').value.trim();
+            const embedColor = document.getElementById('embedColor').value;
+
+            if (!title) {
+                alert('Please fill in the post title.');
+                return;
+            }
+
+            const isEmbedWithContent = postType === 'embed' && (embedTitle || embedDescription);
+            if (!content && !isEmbedWithContent) {
+                alert('Please provide content for the message, or fill out the embed title/description.');
+                return;
+            }
+
+            const post = {
+                id: currentEditId || Date.now(),
+                title,
+                content,
+                type: postType,
+                embedTitle,
+                embedDescription,
+                embedUrl,
+                embedImage,
+                embedThumbnail,
+                embedColor
+            };
+
+            if (currentEditId) {
+                const index = savedPosts.findIndex(p => p.id === currentEditId);
+                savedPosts[index] = post;
+                currentEditId = null;
+            } else {
+                savedPosts.push(post);
+            }
+
+            renderSavedPosts();
+            clearForm();
+            alert('Post saved successfully! 🎉');
+        }
+
+        function clearForm() {
+            document.getElementById('postTitle').value = '';
+            document.getElementById('postContent').value = '';
+            document.getElementById('postType').value = 'simple';
+            document.getElementById('embedTitle').value = '';
+            document.getElementById('embedDescription').value = '';
+            document.getElementById('embedUrl').value = '';
+            document.getElementById('embedImage').value = '';
+            document.getElementById('embedThumbnail').value = '';
+            document.getElementById('embedColor').value = '#5865f2';
+            currentEditId = null;
+            toggleEmbedOptions();
+            updatePreview();
+        }
+
+        function renderSavedPosts() {
+            const container = document.getElementById('savedPosts');
+            
+            if (savedPosts.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No saved posts yet. Create your first post!</p></div>';
+                selectedPostId = null;
+                updatePostPreview();
+                return;
+            }
+
+            container.innerHTML = savedPosts.map(post => `
+                <div class="post-item ${post.id === selectedPostId ? 'selected' : ''}" onclick="selectPost(${post.id})" data-post-id="${post.id}">
+                    <div class="post-title">${post.title}</div>
+                    <div class="post-content">${post.content.length > 100 ? post.content.substring(0, 100) + '...' : post.content}</div>
+                    <div style="margin-top: 10px; font-size: 12px; color: var(--text-secondary);">
+                        Type: ${post.type === 'simple' ? '💬 Simple Message' : '🎨 Rich Embed'} • Click to preview
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectPost(id) {
+            selectedPostId = id;
+            renderSavedPosts(); // Re-render to update selected state
+            updatePostPreview();
+        }
+
+        function updatePostPreview() {
+            const previewStatus = document.getElementById('postPreviewStatus');
+            const previewContainer = document.getElementById('postDiscordPreview');
+            const previewActions = document.getElementById('previewActions');
+            const previewWebhookSelect = document.getElementById('previewWebhookSelect');
+
+            if (!selectedPostId) {
+                previewStatus.className = 'webhook-status status-warning';
+                previewStatus.innerHTML = '🎯 Select a post to see preview';
+                previewContainer.innerHTML = '<div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">📝 Select a post from the left to see how it will look in Discord</div>';
+                previewActions.style.display = 'none';
+                return;
+            }
+
+            const post = savedPosts.find(p => p.id === selectedPostId);
+            if (!post) {
+                selectedPostId = null;
+                updatePostPreview();
+                return;
+            }
+
+            // Update status
+            const selectedWebhookId = previewWebhookSelect?.value;
+            if (selectedWebhookId) {
+                const webhook = savedWebhooks.find(w => w.id == selectedWebhookId);
+                previewStatus.className = 'webhook-status status-success';
+                previewStatus.innerHTML = `✅ Previewing "${post.title}" with ${webhook?.name || 'Unknown Webhook'}`;
+            } else {
+                previewStatus.className = 'webhook-status status-warning';
+                previewStatus.innerHTML = `👁️ Previewing "${post.title}" - Select webhook to send`;
+            }
+
+            // Generate preview
+            generatePostPreview(post, previewContainer);
+            
+            // Show action buttons
+            previewActions.style.display = 'block';
+        }
+
+        function generatePostPreview(post, container) {
+            if (post.type === 'simple') {
+                if (!post.content.trim()) {
+                    container.innerHTML = '<div style="color: var(--text-secondary);">Empty message</div>';
+                    return;
+                }
+                container.innerHTML = `<div>${post.content.replace(/\n/g, '<br>')}</div>`;
+            } else {
+                const hasEmbedContent = post.embedTitle?.trim() || post.embedDescription?.trim() || 
+                                      post.embedUrl?.trim() || post.embedImage?.trim() || post.embedThumbnail?.trim();
+                const hasMainContent = post.content?.trim();
+                
+                if (!hasMainContent && !hasEmbedContent) {
+                    container.innerHTML = '<div style="color: var(--text-secondary);">Empty embed</div>';
+                    return;
+                }
+
+                let previewHTML = '';
+                
+                // Add main content if it exists
+                if (hasMainContent) {
+                    previewHTML += `<div>${post.content.replace(/\n/g, '<br>')}</div>`;
+                }
+                
+                // Add embed
+                previewHTML += `<div class="discord-embed" style="border-left-color: ${post.embedColor || '#5865f2'}">`;
+                
+                // Add thumbnail if provided
+                if (post.embedThumbnail) {
+                    previewHTML += `<img src="${post.embedThumbnail}" class="embed-thumbnail" alt="Thumbnail" onerror="this.style.display='none'">`;
+                }
+                
+                // Add title (with link if URL provided)
+                if (post.embedTitle) {
+                    if (post.embedUrl) {
+                        previewHTML += `<a href="${post.embedUrl}" class="embed-title-link" target="_blank">${post.embedTitle}</a>`;
+                    } else {
+                        previewHTML += `<div class="embed-title">${post.embedTitle}</div>`;
+                    }
+                }
+                
+                // Add description
+                previewHTML += `<div class="embed-description">${post.embedDescription ? post.embedDescription.replace(/\n/g, '<br>') : (post.embedTitle ? '' : 'No description provided')}</div>`;
+                
+                // Add image if provided
+                if (post.embedImage) {
+                    previewHTML += `<img src="${post.embedImage}" class="embed-image" alt="Embed Image" onerror="this.style.display='none'">`;
+                }
+                
+                previewHTML += `</div>`;
+                
+                container.innerHTML = previewHTML;
+            }
+        }
+
+        function editSelectedPost() {
+            if (!selectedPostId) return;
+            editPost(selectedPostId);
+        }
+
+        function sendSelectedPost() {
+            if (!selectedPostId) return;
+            
+            const previewWebhookSelect = document.getElementById('previewWebhookSelect');
+            const selectedWebhookId = previewWebhookSelect?.value;
+            
+            if (!selectedWebhookId) {
+                alert('Please select a webhook first.');
+                return;
+            }
+            
+            const webhook = savedWebhooks.find(w => w.id == selectedWebhookId);
+            if (!webhook) {
+                alert('Selected webhook not found.');
+                return;
+            }
+            
+            const post = savedPosts.find(p => p.id === selectedPostId);
+            if (!post) return;
+            
+            sendToDiscordInternal(post, webhook.url);
+        }
+
+        function deleteSelectedPost() {
+            if (!selectedPostId) return;
+            deletePost(selectedPostId);
+        }
+
+        function editPost(id) {
+            const post = savedPosts.find(p => p.id === id);
+            if (!post) return;
+
+            document.getElementById('postTitle').value = post.title;
+            document.getElementById('postContent').value = post.content;
+            document.getElementById('postType').value = post.type;
+            document.getElementById('embedTitle').value = post.embedTitle || '';
+            document.getElementById('embedDescription').value = post.embedDescription || '';
+            document.getElementById('embedUrl').value = post.embedUrl || '';
+            document.getElementById('embedImage').value = post.embedImage || '';
+            document.getElementById('embedThumbnail').value = post.embedThumbnail || '';
+            document.getElementById('embedColor').value = post.embedColor || '#5865f2';
+            
+            currentEditId = id;
+            toggleEmbedOptions();
+            updatePreview();
+            
+            // Switch to the Create Post tab for editing
+            switchTab('create');
+        }
+
+        function deletePost(id) {
+            if (confirm('Are you sure you want to delete this post?')) {
+                savedPosts = savedPosts.filter(p => p.id !== id);
+                
+                // Clear selection if the deleted post was selected
+                if (selectedPostId === id) {
+                    selectedPostId = null;
+                }
+                
+                renderSavedPosts();
+                updatePostPreview();
+            }
+        }
+
+        async function sendPost(id) {
+            // This function is kept for compatibility but redirects to the new preview system
+            selectedPostId = id;
+            renderSavedPosts();
+            updatePostPreview();
+            switchTab('posts');
+            alert('💡 Post selected! Choose a webhook in the preview pane and click "Send to Discord".');
+        }
+
+        async function sendToDiscord() {
+            const title = document.getElementById('postTitle').value.trim();
+            const content = document.getElementById('postContent').value.trim();
+            const postType = document.getElementById('postType').value;
+            const embedTitle = document.getElementById('embedTitle').value.trim();
+            const embedDescription = document.getElementById('embedDescription').value.trim();
+            const embedUrl = document.getElementById('embedUrl').value.trim();
+            const embedImage = document.getElementById('embedImage').value.trim();
+            const embedThumbnail = document.getElementById('embedThumbnail').value.trim();
+            const embedColor = document.getElementById('embedColor').value;
+
+            if (!content) {
+                alert('Please enter some content to send.');
+                return;
+            }
+
+            const post = { content, type: postType, embedTitle, embedDescription, embedUrl, embedImage, embedThumbnail, embedColor };
+            await sendToDiscordInternal(post, selectedWebhookUrl);
+        }
+
+        async function sendToDiscordInternal(post, webhookUrl = selectedWebhookUrl) {
+            if (!webhookUrl) {
+                alert('Please select a Discord webhook first.');
+                return;
+            }
+
+            if (!webhookUrl.includes('discord.com/api/webhooks/')) {
+                alert('Invalid webhook URL format.');
+                return;
+            }
+
+            try {
+                let payload = {};
+
+                if (post.type === 'simple') {
+                    payload = { content: post.content };
+                } else {
+                    const embed = {
+                        description: post.embedDescription || post.content,
+                        color: parseInt(post.embedColor.replace('#', ''), 16)
+                    };
+                    
+                    if (post.embedTitle) {
+                        embed.title = post.embedTitle;
+                    }
+                    
+                    if (post.embedUrl) {
+                        embed.url = post.embedUrl;
+                    }
+                    
+                    if (post.embedImage) {
+                        embed.image = { url: post.embedImage };
+                    }
+                    
+                    if (post.embedThumbnail) {
+                        embed.thumbnail = { url: post.embedThumbnail };
+                    }
+                    
+                    payload = { 
+                        content: post.content,
+                        embeds: [embed] 
+                    };
+                }
+
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    alert('Message sent successfully to Discord! 🎉');
+                    if (document.getElementById('quickMessage')) {
+                        document.getElementById('quickMessage').value = '';
+                    }
+                } else {
+                    const errorText = await response.text();
+                    alert(`Failed to send message: ${response.status} ${response.statusText}\n${errorText}`);
+                }
+            } catch (error) {
+                alert(`Error sending message: ${error.message}`);
+            }
+        }
+
+        // Export/Import Functions
+        function exportData(includeUrls = false) {
+            if (includeUrls && !confirm('⚠️ WARNING: This will export actual webhook URLs in plain text!\n\nOnly use this for:\n• Personal backups in secure locations\n• Trusted team members\n• Private file storage\n\nDo NOT share these files publicly!\n\nContinue?')) {
+                return;
+            }
+
+            const data = {
+                posts: savedPosts,
+                webhooks: savedWebhooks.map(webhook => ({
+                    ...webhook,
+                    url: includeUrls ? webhook.url : "***REDACTED***"
+                })),
+                exportDate: new Date().toISOString(),
+                version: "1.0",
+                includesUrls: includeUrls
+            };
+            
+            const filename = includeUrls ? 
+                `discord-post-manager-FULL-${getDateString()}.json` : 
+                `discord-post-manager-backup-${getDateString()}.json`;
+            
+            downloadJSON(data, filename, includeUrls);
+        }
+
+        function exportWebhooks() {
+            const data = {
+                webhooks: savedWebhooks.map(webhook => ({
+                    ...webhook,
+                    url: "***REDACTED***" // Security: Don't export actual webhook URLs
+                })),
+                exportDate: new Date().toISOString(),
+                version: "1.0",
+                type: "webhooks"
+            };
+            
+            downloadJSON(data, `discord-webhooks-${getDateString()}.json`);
+        }
+
+        function exportPosts() {
+            const data = {
+                posts: savedPosts,
+                exportDate: new Date().toISOString(),
+                version: "1.0",
+                type: "posts"
+            };
+            
+            downloadJSON(data, `discord-posts-${getDateString()}.json`);
+        }
+
+        function downloadJSON(data, filename, includeUrls = false) {
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            const message = includeUrls ? 
+                `✅ Exported successfully!\n\nFile: ${filename}\n\n🔒 SECURITY WARNING: This file contains actual webhook URLs. Keep it secure!` :
+                `✅ Exported successfully!\n\nFile: ${filename}\n\nNote: Webhook URLs are redacted for security. Use .env files to store URLs separately.`;
+            
+            alert(message);
+        }
+
+        function getDateString() {
+            const now = new Date();
+            return now.getFullYear() + '-' + 
+                   String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                   String(now.getDate()).padStart(2, '0');
+        }
+
+        function importData() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Validate the imported data
+                    if (!data.version) {
+                        throw new Error('Invalid file format: Missing version information');
+                    }
+
+                    let importedPosts = 0;
+                    let importedWebhooks = 0;
+                    let messages = [];
+
+                    // Import posts
+                    if (data.posts && Array.isArray(data.posts)) {
+                        data.posts.forEach(post => {
+                            // Generate new ID to avoid conflicts
+                            const newPost = {
+                                ...post,
+                                id: Date.now() + Math.random()
+                            };
+                            savedPosts.push(newPost);
+                            importedPosts++;
+                        });
+                        messages.push(`📝 Imported ${importedPosts} posts`);
+                    }
+
+                    // Import webhooks
+                    if (data.webhooks && Array.isArray(data.webhooks)) {
+                        data.webhooks.forEach(webhook => {
+                            // Generate new ID and preserve URLs if they were included
+                            const newWebhook = {
+                                ...webhook,
+                                id: Date.now() + Math.random(),
+                                url: data.includesUrls ? webhook.url : "" // Keep URLs if export included them
+                            };
+                            savedWebhooks.push(newWebhook);
+                            importedWebhooks++;
+                        });
+                        
+                        if (data.includesUrls) {
+                            messages.push(`🔗 Imported ${importedWebhooks} webhooks with URLs`);
+                        } else {
+                            messages.push(`🔗 Imported ${importedWebhooks} webhooks (upload .env file to restore URLs)`);
+                        }
+                    }
+
+                    // Update UI
+                    renderSavedPosts();
+                    renderSavedWebhooks();
+                    updateWebhookSelectors();
+
+                    // Show success message
+                    let successMessage = `✅ Import successful!\n\n${messages.join('\n')}\n\n${data.exportDate ? `Exported: ${new Date(data.exportDate).toLocaleString()}` : ''}`;
+                    
+                    if (!data.includesUrls && importedWebhooks > 0) {
+                        successMessage += '\n\n💡 TIP: Upload a .env file to automatically restore webhook URLs!';
+                    }
+                    
+                    alert(successMessage);
+
+                    // Clear the file input
+                    document.getElementById('importFile').value = '';
+
+                } catch (error) {
+                    alert(`❌ Import failed!\n\nError: ${error.message}\n\nPlease make sure you're importing a valid Discord Post Manager backup file.`);
+                    console.error('Import error:', error);
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function downloadEnvTemplate() {
+            // Create a template .env file with current webhook names
+            let envContent = `# Discord Post Manager - Webhook URLs
+# Add your webhook URLs here using any names you want!
+# Format: YOUR_CUSTOM_NAME=https://discord.com/api/webhooks/...
+# 
+# Examples:
+MAIN_SERVER_GENERAL=https://discord.com/api/webhooks/123456789/abcdef...
+MAIN_SERVER_ANNOUNCEMENTS=https://discord.com/api/webhooks/234567890/bcdefg...
+DEV_SERVER_GENERAL=https://discord.com/api/webhooks/345678901/cdefgh...
+GAMING_SERVER_EVENTS=https://discord.com/api/webhooks/456789012/defghi...
+COMMUNITY_SERVER_WELCOME=https://discord.com/api/webhooks/567890123/efghij...
+
+# Add as many webhooks as you need with descriptive names:
+# MY_PERSONAL_SERVER=https://discord.com/api/webhooks/...
+# WORK_PROJECT_UPDATES=https://discord.com/api/webhooks/...
+# CLAN_ANNOUNCEMENTS=https://discord.com/api/webhooks/...
+# BOT_TESTING_CHANNEL=https://discord.com/api/webhooks/...
+
+`;
+
+            // Only add current webhooks as examples if they exist
+            if (savedWebhooks.length > 1) { // More than just the example webhook
+                envContent += `# Your current webhooks (as reference):
+`;
+                savedWebhooks.forEach(webhook => {
+                    if (webhook.name !== "Example Server - General") {
+                        const envKey = webhook.name.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+                        envContent += `# ${envKey}=${webhook.url || 'https://discord.com/api/webhooks/YOUR_WEBHOOK_URL'}\n`;
+                    }
+                });
+            }
+
+            envContent += `
+# Instructions:
+# 1. Replace the example URLs above with your actual Discord webhook URLs
+# 2. Use any descriptive names you want (left side of =)
+# 3. Names can use letters, numbers, and underscores only
+# 4. Save this file and upload it using "Upload Webhook URLs (.env)"
+# 5. When importing, you can choose to update existing webhooks or create new ones
+`;
+
+            const blob = new Blob([envContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `discord-webhooks-${getDateString()}.env`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('✅ .env template downloaded!\n\nUse any names you want for your webhooks! The import will let you choose how to handle them.');
+        }
+
+        function importEnvFile() {
+            const file = document.getElementById('envFile').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const envContent = e.target.result;
+                    const envWebhooks = parseEnvFile(envContent);
+                    
+                    if (Object.keys(envWebhooks).length === 0) {
+                        alert('❌ No valid webhook URLs found in .env file!\n\nMake sure your file contains lines like:\nMY_WEBHOOK_NAME=https://discord.com/api/webhooks/...');
+                        return;
+                    }
+
+                    // Ask user how they want to handle the import
+                    const action = confirm(`Found ${Object.keys(envWebhooks).length} webhooks in .env file.\n\nChoose import method:\n\n✅ OK = Create new webhooks from .env file\n❌ Cancel = Update existing webhooks (match by name)`);
+                    
+                    let createdCount = 0;
+                    let updatedCount = 0;
+                    let createdWebhooks = [];
+                    let updatedWebhooks = [];
+
+                    if (action) {
+                        // Create new webhooks from .env file
+                        Object.entries(envWebhooks).forEach(([envKey, url]) => {
+                            // Convert env key to readable name
+                            const webhookName = envKey.toLowerCase()
+                                .replace(/_/g, ' ')
+                                .replace(/\b\w/g, l => l.toUpperCase());
+                            
+                            const newWebhook = {
+                                id: Date.now() + Math.random(),
+                                name: webhookName,
+                                url: url,
+                                description: `Imported from .env file`
+                            };
+                            
+                            savedWebhooks.push(newWebhook);
+                            createdCount++;
+                            createdWebhooks.push(webhookName);
+                        });
+                    } else {
+                        // Try to update existing webhooks by matching names
+                        savedWebhooks.forEach(webhook => {
+                            // Try multiple name matching strategies
+                            const possibleKeys = [
+                                webhook.name.toUpperCase().replace(/[^A-Z0-9]/g, '_'), // Standard conversion
+                                webhook.name.toUpperCase().replace(/[^A-Z0-9]/g, ''), // No underscores
+                                webhook.name.toUpperCase().replace(/\s+/g, '_'), // Just replace spaces
+                                webhook.name.toUpperCase() // Exact uppercase
+                            ];
+                            
+                            let matchFound = false;
+                            for (const key of possibleKeys) {
+                                if (envWebhooks[key] && !matchFound) {
+                                    webhook.url = envWebhooks[key];
+                                    updatedCount++;
+                                    updatedWebhooks.push(webhook.name);
+                                    matchFound = true;
+                                    delete envWebhooks[key]; // Remove so we don't count it twice
+                                    break;
+                                }
+                            }
+                        });
+                        
+                        // Create new webhooks for any remaining .env entries
+                        Object.entries(envWebhooks).forEach(([envKey, url]) => {
+                            const webhookName = envKey.toLowerCase()
+                                .replace(/_/g, ' ')
+                                .replace(/\b\w/g, l => l.toUpperCase());
+                            
+                            const newWebhook = {
+                                id: Date.now() + Math.random(),
+                                name: webhookName,
+                                url: url,
+                                description: `Imported from .env file (no match found)`
+                            };
+                            
+                            savedWebhooks.push(newWebhook);
+                            createdCount++;
+                            createdWebhooks.push(webhookName);
+                        });
+                    }
+
+                    // Update UI
+                    renderSavedWebhooks();
+                    updateWebhookSelectors();
+                    updateWebhookStatus();
+
+                    // Show results
+                    let message = `✅ .env file imported successfully!\n\n📊 Results:`;
+                    
+                    if (createdCount > 0) {
+                        message += `\n• ${createdCount} new webhooks created`;
+                        if (createdWebhooks.length <= 5) {
+                            message += `\n  └ ${createdWebhooks.join(', ')}`;
+                        }
+                    }
+                    
+                    if (updatedCount > 0) {
+                        message += `\n• ${updatedCount} existing webhooks updated`;
+                        if (updatedWebhooks.length <= 5) {
+                            message += `\n  └ ${updatedWebhooks.join(', ')}`;
+                        }
+                    }
+
+                    alert(message);
+
+                    // Clear the file input
+                    document.getElementById('envFile').value = '';
+                    
+                    // Auto-save the changes
+                    autoSave();
+
+                } catch (error) {
+                    alert(`❌ .env import failed!\n\nError: ${error.message}\n\nPlease make sure you're uploading a valid .env file.`);
+                    console.error('.env import error:', error);
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function parseEnvFile(envContent) {
+            const webhookMap = {};
+            const lines = envContent.split('\n');
+            
+            lines.forEach((line, lineNumber) => {
+                line = line.trim();
+                
+                // Skip comments and empty lines
+                if (line.startsWith('#') || !line) return;
+                
+                // Parse KEY=VALUE format - more flexible with key names
+                const match = line.match(/^([A-Z0-9_]+)\s*=\s*(.+)$/i);
+                if (match) {
+                    const key = match[1].toUpperCase(); // Normalize to uppercase
+                    const value = match[2].trim();
+                    
+                    // Remove quotes if present
+                    const cleanValue = value.replace(/^["']|["']$/g, '');
+                    
+                    // Validate webhook URL format
+                    if (cleanValue.includes('discord.com/api/webhooks/') && cleanValue.startsWith('https://')) {
+                        webhookMap[key] = cleanValue;
+                    } else {
+                        console.warn(`Line ${lineNumber + 1}: Invalid webhook URL format: ${cleanValue}`);
+                    }
+                } else if (line.includes('=')) {
+                    console.warn(`Line ${lineNumber + 1}: Invalid format, expected KEY=VALUE: ${line}`);
+                }
+            });
+            
+            return webhookMap;
+        }
+
+        function showEnvHelp() {
+            const helpText = `📋 .env File Help
+
+🎯 Purpose:
+Store your Discord webhook URLs separately from your posts and configurations. This lets you:
+• Share post templates safely without exposing webhook URLs
+• Keep your webhook URLs private and secure
+• Easily backup and restore your complete setup
+
+✏️ Naming Your Webhooks:
+You can use ANY names you want in your .env file! Examples:
+
+MAIN_SERVER_GENERAL=https://discord.com/api/webhooks/123...
+MY_PERSONAL_BOT=https://discord.com/api/webhooks/456...
+WORK_PROJECT_UPDATES=https://discord.com/api/webhooks/789...
+CLAN_ANNOUNCEMENTS=https://discord.com/api/webhooks/101...
+DEV_TESTING_CHANNEL=https://discord.com/api/webhooks/202...
+
+🔧 Rules:
+• Use letters, numbers, and underscores only
+• No spaces in names (use underscores instead)
+• Names will be converted to "Title Case" when imported
+• One webhook per line in format: NAME=URL
+
+🚀 Import Options:
+When uploading .env file, you can choose:
+• Create New: Makes new webhooks with your custom names
+• Update Existing: Tries to match and update current webhooks
+
+💡 Pro Tips:
+• Use descriptive names that make sense to you
+• Group similar webhooks with prefixes (MAIN_, DEV_, GAMING_)
+• Keep your .env file secure and don't share it publicly
+• You can have as many webhooks as you need!`;
+
+            alert(helpText);
+        }
+
+        // Auto-save to localStorage (if available)
+        function autoSave() {
+            if (typeof(Storage) !== "undefined") {
+                try {
+                    const data = {
+                        posts: savedPosts,
+                        webhooks: savedWebhooks,
+                        lastSaved: new Date().toISOString()
+                    };
+                    localStorage.setItem('discordPostManagerData', JSON.stringify(data));
+                } catch (e) {
+                    console.warn('Could not save to localStorage:', e);
+                }
+            }
+        }
+
+        // Auto-load from localStorage (if available)
+        function autoLoad() {
+            if (typeof(Storage) !== "undefined") {
+                try {
+                    const saved = localStorage.getItem('discordPostManagerData');
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        
+                        // Only load saved posts if we have more than just examples, or if examples were customized
+                        if (data.posts && data.posts.length > 2) {
+                            savedPosts = data.posts;
+                        } else if (data.posts && data.posts.length === 2) {
+                            // Check if the examples were modified (not the default examples)
+                            const hasCustomPosts = data.posts.some(post => 
+                                !post.title.startsWith("Example:") || 
+                                (post.id !== 1 && post.id !== 2)
+                            );
+                            if (hasCustomPosts) {
+                                savedPosts = data.posts;
+                            }
+                        }
+                        
+                        if (data.webhooks && data.webhooks.length > 1) { // More than just example webhook
+                            savedWebhooks = data.webhooks;
+                        }
+                        
+                        console.log('Auto-loaded data from localStorage');
+                    }
+                } catch (e) {
+                    console.warn('Could not load from localStorage:', e);
+                }
+            }
+        }
+
+        // Post Collection Management
+        function importPostCollection() {
+            const file = document.getElementById('importPostsFile').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    let postsToImport = [];
+                    
+                    // Handle different file formats
+                    if (data.posts && Array.isArray(data.posts)) {
+                        postsToImport = data.posts;
+                    } else if (Array.isArray(data)) {
+                        postsToImport = data;
+                    } else {
+                        throw new Error('Invalid file format. Expected array of posts or object with posts property.');
+                    }
+
+                    if (postsToImport.length === 0) {
+                        alert('❌ No posts found in the imported file.');
+                        return;
+                    }
+
+                    // Ask user how to handle the import
+                    const replaceAll = confirm(`Found ${postsToImport.length} posts in the file.\n\n✅ OK = Replace all current posts\n❌ Cancel = Add to existing posts`);
+                    
+                    if (replaceAll) {
+                        // Keep only examples if user wants to replace all
+                        savedPosts = [
+                            savedPosts.find(p => p.id === 1),
+                            savedPosts.find(p => p.id === 2)
+                        ].filter(Boolean);
+                    }
+
+                    let importedCount = 0;
+                    postsToImport.forEach(post => {
+                        if (post.title && post.type) {
+                            const newPost = {
+                                ...post,
+                                id: Date.now() + Math.random() // Generate new ID
+                            };
+                            savedPosts.push(newPost);
+                            importedCount++;
+                        }
+                    });
+
+                    renderSavedPosts();
+                    autoSave();
+
+                    alert(`✅ Import successful!\n\nImported ${importedCount} posts${replaceAll ? ' (replaced existing)' : ' (added to existing)'}.`);
+
+                    // Clear the file input
+                    document.getElementById('importPostsFile').value = '';
+
+                } catch (error) {
+                    alert(`❌ Import failed!\n\nError: ${error.message}\n\nPlease make sure you're importing a valid post collection file.`);
+                    console.error('Post import error:', error);
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function clearAllPosts() {
+            if (confirm('🗑️ Clear All Posts?\n\nThis will remove all posts except the two examples.\n\nYour posts will be permanently deleted unless you export them first!\n\nContinue?')) {
+                // Keep only the examples
+                savedPosts = savedPosts.filter(post => post.id === 1 || post.id === 2);
+                selectedPostId = null;
+                renderSavedPosts();
+                updatePostPreview();
+                autoSave();
+                alert('✅ All posts cleared! Only examples remain.');
+                         }
+         }
+
+        function downloadTemplate(type) {
+            let templateData = {};
+            const dateString = getDateString();
+            
+            switch(type) {
+                case 'gaming':
+                    templateData = {
+                        posts: [
+                            {
+                                id: Date.now() + 1,
+                                title: "Server Welcome",
+                                content: "Welcome to our gaming server! 🎮\n\nPlease read #rules and pick up your roles in #roles-selection!",
+                                type: "simple",
+                                embedTitle: "", embedDescription: "", embedUrl: "", embedImage: "", embedThumbnail: "", embedColor: "#5865f2"
+                            },
+                            {
+                                id: Date.now() + 2,
+                                title: "Weekly Event Announcement",
+                                content: "🎮 This week's gaming event is here!",
+                                type: "embed",
+                                embedTitle: "🏆 Weekly Tournament",
+                                embedDescription: "Join us for this week's tournament!\n\n**Game:** [Your Game Here]\n**Time:** [Day] at [Time]\n**Prize:** [Prize Info]\n\nReact with 🎮 to join!",
+                                embedUrl: "", embedImage: "", embedThumbnail: "", embedColor: "#ff6b6b"
+                            },
+                            {
+                                id: Date.now() + 3,
+                                title: "LFG - Looking for Group",
+                                content: "",
+                                type: "embed",
+                                embedTitle: "🔍 Looking for Group",
+                                embedDescription: "**Game:** [Game Name]\n**Activity:** [Raid/Match/Quest]\n**Time:** [When]\n**Players Needed:** [Number]\n**Requirements:** [Skill level/gear]\n\nReact to join or DM me!",
+                                embedUrl: "", embedImage: "", embedThumbnail: "", embedColor: "#00d4aa"
+                            },
+                            {
+                                id: Date.now() + 4,
+                                title: "Maintenance Notice",
+                                content: "",
+                                type: "embed",
+                                embedTitle: "🔧 Server Maintenance",
+                                embedDescription: "**Scheduled Maintenance**\n\n**When:** [Date and Time]\n**Duration:** [How long]\n**Reason:** [Bot updates/Server changes]\n\nThe server may be temporarily unavailable during this time.",
+                                embedUrl: "", embedImage: "", embedThumbnail: "", embedColor: "#f59e0b"
+                            }
+                        ],
+                        exportDate: new Date().toISOString(),
+                        version: "1.0",
+                        type: "gaming-template"
+                    };
+                    break;
+                    
+                case 'community':
+                    templateData = {
+                        posts: [
+                            {
+                                id: Date.now() + 1,
+                                title: "Community Welcome",
+                                content: "Welcome to our community! 🌟\n\nWe're so glad you're here! Please introduce yourself in #introductions and don't forget to read our #community-guidelines.",
+                                type: "simple",
+                                embedTitle: "", embedDescription: "", embedUrl: "", embedImage: "", embedThumbnail: "", embedColor: "#5865f2"
+                            },
+                            {
+                                id: Date.now() + 2,
+                                title: "Community Event",
+                                content: "📅 Upcoming community event!",
+                                type: "embed",
+                                embedTitle: "🎉 Community Meetup",
+                                embedDescription: "Join us for our monthly community event!\n\n**Topic:** [Event Topic]\n**Date:** [Date]\n**Time:** [Time]\n**Where:** [Voice Channel/Location]\n\nEveryone is welcome! Bring your questions and ideas.",
+                                embedUrl: "", embedImage: "", embedThumbnail: "", embedColor: "#8b5cf6"
+                            },
+                            {
+                                id: Date.now() + 3,
+                                title: "Weekly Discussion",
+                                content: "",
+                                type: "embed",
+                                embedTitle: "💬 Weekly Discussion Thread",
+                                embedDescription: "**This Week's Topic:** [Discussion Topic]\n\nShare your thoughts, experiences, and questions below! Let's have a great discussion.\n\nRemember to be respectful and constructive in your responses.",
+                                embedUrl: "", embedImage: "", embedThumbnail: "", embedColor: "#06b6d4"
+                            },
+                            {
+                                id: Date.now() + 4,
+                                title: "Community Spotlight",
+                                content: "",
+                                type: "embed",
+                                embedTitle: "⭐ Member Spotlight",
+                                embedDescription: "**Featuring:** @[Member Name]\n\n[Brief description of their contribution to the community]\n\nThank you for being an awesome part of our community! 🙌",
+                                embedUrl: "", embedImage: "", embedThumbnail: "", embedColor: "#f59e0b"
+                            }
+                        ],
+                        exportDate: new Date().toISOString(),
+                        version: "1.0",
+                        type: "community-template"
+                    };
+                    break;
+                    
+                case 'business':
+                    templateData = {
+                        posts: [
+                            {
+                                id: Date.now() + 1,
+                                title: "Team Welcome",
+                                content: "Welcome to the team! 👋\n\nPlease check #announcements for important updates and feel free to introduce yourself in #introductions.",
+                                type: "simple",
+                                embedTitle: "", embedDescription: "", embedUrl: "", embedImage: "", embedThumbnail: "", embedColor: "#5865f2"
+                            },
+                            {
+                                id: Date.now() + 2,
+                                title: "Project Update",
+                                content: "",
+                                type: "embed",
+                                embedTitle: "📊 Project Status Update",
+                                embedDescription: "**Project:** [Project Name]\n**Status:** [On Track/Behind/Ahead]\n**Completion:** [Percentage]%\n**Next Milestone:** [Milestone]\n**Due Date:** [Date]\n\n**Notes:** [Additional information]",
+                                embedUrl: "", embedImage: "", embedThumbnail: "", embedColor: "#10b981"
+                            },
+                            {
+                                id: Date.now() + 3,
+                                title: "Meeting Reminder",
+                                content: "",
+                                type: "embed",
+                                embedTitle: "📅 Meeting Reminder",
+                                embedDescription: "**Meeting:** [Meeting Name]\n**Date:** [Date]\n**Time:** [Time]\n**Location:** [Room/Link]\n**Agenda:** [Brief agenda]\n\nPlease confirm your attendance by reacting with ✅",
+                                embedUrl: "", embedImage: "", embedThumbnail: "", embedColor: "#3b82f6"
+                            },
+                            {
+                                id: Date.now() + 4,
+                                title: "Team Achievement",
+                                content: "",
+                                type: "embed",
+                                embedTitle: "🎉 Team Achievement",
+                                embedDescription: "**Congratulations!** 🎊\n\n[Achievement description]\n\nGreat work everyone! Your dedication and hard work made this possible.\n\n**Special thanks to:** [Team members]",
+                                embedUrl: "", embedImage: "", embedThumbnail: "", embedColor: "#f59e0b"
+                            }
+                        ],
+                        exportDate: new Date().toISOString(),
+                        version: "1.0",
+                        type: "business-template"
+                    };
+                    break;
+            }
+            
+            const filename = `discord-posts-${type}-template-${dateString}.json`;
+            
+            const jsonString = JSON.stringify(templateData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} template downloaded!\n\nFile: ${filename}\n\nImport this file using the "Import Posts" button to add these templates to your collection.`);
+        }
+
+        // Initialize the app when the page loads
+        autoLoad(); // Load saved data first
+        init();
+        
+        // Initialize preview after everything is loaded
+        setTimeout(() => {
+            updatePostPreview();
+        }, 100);
+        
+        // Auto-save when data changes
+        const originalSavePost = savePost;
+        const originalSaveWebhook = saveWebhook;
+        const originalDeletePost = deletePost;
+        const originalDeleteWebhook = deleteWebhook;
+        
+        savePost = function() {
+            originalSavePost();
+            autoSave();
+        };
+        
+        saveWebhook = function() {
+            originalSaveWebhook();
+            autoSave();
+        };
+        
+        deletePost = function(id) {
+            originalDeletePost(id);
+            autoSave();
+        };
+        
+        deleteWebhook = function(id) {
+            originalDeleteWebhook(id);
+            autoSave();
+        };
+    </script>
+</body>
+</html>
